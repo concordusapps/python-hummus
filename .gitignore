@@ -1,0 +1,13 @@
+# Dot files
+.*
+!.editorconfig
+!.gitattributes
+!.gitignore
+!.travis*
+
+# Python
+*.pyc
+*.pyo
+*.egg-info
+dist/
+build/
