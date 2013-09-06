@@ -8,9 +8,7 @@ from fnmatch import fnmatch
 from os.path import join
 from functools import partial
 # from distut.command import build_clib
-from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-import sys
 import os
 
 
@@ -151,4 +149,3 @@ setup(
             sources=find('lib/python/interface', ['*.cxx'])),
     ]
 )
-

@@ -2,11 +2,9 @@
 import hummus
 from tempfile import NamedTemporaryFile
 import os
-from os.path import join, dirname
 
 
 def assert_pdf(filename):
-    base = dirname(__file__)
     with open(filename, 'rb') as stream:
         assert stream.read(8) == b'%PDF-1.7'
 

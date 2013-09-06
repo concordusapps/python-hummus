@@ -10,4 +10,3 @@ cdef inline string to_string(value):
         return <string>value.encode('utf8')
 
     return <string>value
-
