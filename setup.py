@@ -7,8 +7,7 @@ import subprocess
 from fnmatch import fnmatch
 from os.path import join
 from functools import partial
-# from distut.command import build_clib
-from Cython.Distutils import build_ext
+from Cython.Distutils import build_ext as _build_ext
 import os
 
 
@@ -114,6 +113,13 @@ def make_extension(name, sources=None, cython=True):
 def make_library(name, directory):
     patterns = ['*.cxx', '*.cpp']
     return [name, dict(sources=find(directory, patterns), **config)]
+
+
+class build_ext(_build_ext):
+
+    def run(self):
+        self.run_command('build_clib')
+        _build_ext.run(self)
 
 
 setup(
