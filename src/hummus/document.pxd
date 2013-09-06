@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from libcpp.string cimport string
 from hummus.interface cimport PythonByteWriterWithPosition
+from hummus.context cimport PageContentContext
+from hummus.page cimport *
 
 
 cdef extern from "PDFWriter.h":
@@ -25,3 +27,9 @@ cdef extern from "PDFWriter.h":
         int EndPDFForStream()
 
         int Reset()
+
+        PageContentContext* StartPageContentContext(PDFPage*)
+        int EndPageContentContext(PageContentContext*)
+
+        int WritePageAndRelease(PDFPage*)
+        int WritePage(PDFPage*)

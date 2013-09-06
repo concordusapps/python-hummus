@@ -35,3 +35,16 @@ def test_document_stream():
 
     # Remove the file.
     os.remove(stream.name)
+
+
+def test_basic_text():
+    with NamedTemporaryFile(delete=False) as stream:
+        with hummus.Document(stream) as document:
+            with document.Page() as page:
+                pass
+
+    # Open and test the file.
+    assert_pdf(stream.name)
+
+    # Remove the file.
+    os.remove(stream.name)

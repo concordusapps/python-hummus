@@ -115,12 +115,13 @@ def make_library(name, directory):
     return [name, dict(sources=find(directory, patterns), **config)]
 
 
-class build_ext(_build_ext):
+# class build_ext(_build_ext):
 
-    def run(self):
-        self.run_command('build_clib')
-        _build_ext.run(self)
+#     def run(self):
+#         self.run_command('build_clib')
+#         _build_ext.run(self)
 
+build_ext = _build_ext
 
 setup(
     name='hummus',
@@ -150,6 +151,9 @@ setup(
     ],
     ext_modules=[
         make_extension('hummus.document'),
+        make_extension('hummus.rectangle'),
+        make_extension('hummus.page'),
+        make_extension('hummus.context'),
         make_extension(
             name='hummus.interface',
             sources=find('lib/python/interface', ['*.cxx'])),

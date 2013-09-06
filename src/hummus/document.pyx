@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+from contextlib import contextmanager
 from libcpp.string cimport string
 from hummus.document cimport *
 from hummus.utils cimport to_string
 from hummus.interface cimport (
     PythonByteWriterWithPosition, ByteWriterWithPosition)
 from hummus.stream import StreamByteWriterWithPosition
+from hummus.page import Page
+from hummus.context cimport PageContentContext, Context
 
 
 cdef class Document:
@@ -67,11 +70,45 @@ cdef class Document:
     def __exit__(self, *args):
         self.end()
 
-    @property
-    def name(self):
-        """Get the name that this document is bound to.
+    property name:
 
-        This returns the filename if the document is bound to a file or
-        :memory: if it is bound to a stream.
-        """
-        return self._name
+        def __get__(self):
+            """Get the name that this document is bound to.
+
+            This returns the filename if the document is bound to a file or
+            :memory: if it is bound to a stream.
+            """
+            return self._name
+
+    def Context(self, Page page):
+        cdef PageContentContext* handle
+        cdef Context result
+
+        # Create a content context for the passed page.
+        handle = self._handle.StartPageContentContext(page._handle)
+
+        # Wrap the handle.
+        result = Context.__new__(Context)
+        result._document = &self._handle
+        result._handle = handle
+
+        # Return our new context.
+        return result
+
+    def add(self, Page page):
+        self._handle.WritePage(page._handle)
+
+    @contextmanager
+    def Page(self):
+        cdef Page page
+        cdef Context context
+
+        # Instantiate a page and a context.
+        page = Page()
+        context = self.Context(page)
+
+        # Yield the context.
+        yield context
+
+        # Add the page to the document.
+        self.add(page)
