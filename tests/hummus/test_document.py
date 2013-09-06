@@ -37,6 +37,16 @@ def test_document_stream():
     os.remove(stream.name)
 
 
+def test_page_size():
+    page = hummus.Page()
+
+    assert page.media_box.left == 0
+
+    page.media_box = hummus.Rectangle(0, 0, 800, 1000)
+
+    assert page.media_box.bottom == 1000
+
+
 def test_basic_text():
     with NamedTemporaryFile(delete=False) as stream:
         with hummus.Document(stream) as document:

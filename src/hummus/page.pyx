@@ -13,17 +13,17 @@ cdef class Page:
         if self._handle != NULL:
             del self._handle
 
-    # property media_box:
+    property media_box:
 
-    #     def __get__(self):
-    #         cdef PDFRectangle* handle
-    #         cdef Rectangle result
+        def __get__(self):
+            cdef PDFRectangle* handle
+            cdef Rectangle result
 
-    #         handle = <PDFRectangle*>&self._handle.GetMediaBox()
-    #         result = Rectangle(handle.LowerLeftX, handle.LowerLeftY,
-    #                            handle.UpperRightX, handle.UpperRightY)
+            handle = <PDFRectangle*>&self._handle.GetMediaBox()
+            result = Rectangle(handle.LowerLeftX, handle.LowerLeftY,
+                               handle.UpperRightX, handle.UpperRightY)
 
-    #         return result
+            return result
 
-    #     def __set__(self, Rectangle value):
-    #         self._handle.SetMediaBox(deref(value._handle))
+        def __set__(self, Rectangle value):
+            self._handle.SetMediaBox(deref(value._handle))
