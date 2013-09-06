@@ -11,3 +11,11 @@
 *.egg-info
 dist/
 build/
+
+# Cython
+src/**/*.cpp
+src/**/*.so
+src/**/*.h
+
+# Binaries
+*.pdf

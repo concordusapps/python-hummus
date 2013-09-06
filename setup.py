@@ -7,11 +7,26 @@ import subprocess
 from fnmatch import fnmatch
 from os.path import join
 from functools import partial
+# from distut.command import build_clib
+from Cython.Build import cythonize
+from Cython.Distutils import build_ext
+import sys
 import os
 
 
 def prefix(prefix, filenames):
     return list(map(partial(join, prefix), filenames))
+
+
+def find(directory, patterns):
+    result = []
+    for node, _, filenames in os.walk(directory):
+        for filename in filenames:
+            for pattern in patterns:
+                if fnmatch(filename, pattern):
+                    result.append(join(node, filename))
+
+    return result
 
 
 PKGCONFIG_TOKEN_MAP = {
@@ -62,6 +77,7 @@ def pkgconfig(*packages):
     # Return discovered configuration.
     return config
 
+
 # Load the metadata for inclusion in the package.
 # Navigate, import, and retrieve the metadata of the project.
 meta = get_importer('src/hummus').find_module('meta').load_module('meta')
@@ -75,6 +91,31 @@ config['libraries'].append('jpeg')
 
 # Add hummus.
 config['include_dirs'].insert(0, 'lib/hummus/PDFWriter')
+config['include_dirs'].insert(0, 'lib/python')
+
+# Add local library.
+config['include_dirs'].insert(0, 'src')
+
+# Discover additional c++ sources for hummus.
+sources = find('lib/python', ['*.cxx'])
+
+
+def make_extension(name, sources=None, cython=True):
+    # Resolve extension location from name.
+    location = join('src', *name.split('.'))
+    location += '.pyx' if cython else '.cpp'
+
+    # Create and return the extension.
+    return Extension(
+        name=name,
+        sources=sources + [location] if sources else [location],
+        language='c++',
+        **config)
+
+
+def make_library(name, directory):
+    patterns = ['*.cxx', '*.cpp']
+    return [name, dict(sources=find(directory, patterns), **config)]
 
 
 setup(
@@ -97,143 +138,17 @@ setup(
     install_requires=[
     ],
     extras_require={
-        'test': [
-            'pytest',
-            'pytest-pep8',
-            'pytest-cov'
-        ],
+        'test': ['pytest'],
     },
+    cmdclass={'build_ext': build_ext},
+    libraries=[
+        make_library('hummus', 'lib/hummus/PDFWriter'),
+    ],
     ext_modules=[
-        Extension(
-            name='_hummus',
-            sources=prefix('lib/hummus/PDFWriter', [
-               'AbstractContentContext.cpp',
-               'AbstractWrittenFont.cpp',
-               'ANSIFontWriter.cpp',
-               'Ascii7Encoding.cpp',
-               'CatalogInformation.cpp',
-               'CFFANSIFontWriter.cpp',
-               'CFFDescendentFontWriter.cpp',
-               'CFFEmbeddedFontWriter.cpp',
-               'CFFFileInput.cpp',
-               'CFFPrimitiveReader.cpp',
-               'CFFPrimitiveWriter.cpp',
-               'CharStringType1Interpreter.cpp',
-               'CharStringType1Tracer.cpp',
-               'CharStringType2Flattener.cpp',
-               'CharStringType2Interpreter.cpp',
-               'CharStringType2Tracer.cpp',
-               'CIDFontWriter.cpp',
-               'CMYKRGBColor.cpp',
-               'DescendentFontWriter.cpp',
-               'DictionaryContext.cpp',
-               'DocumentContext.cpp',
-               'FontDescriptorWriter.cpp',
-               'FreeTypeFaceWrapper.cpp',
-               'FreeTypeOpenTypeWrapper.cpp',
-               'FreeTypeType1Wrapper.cpp',
-               'FreeTypeWrapper.cpp',
-               'GraphicState.cpp',
-               'GraphicStateStack.cpp',
-               'IndirectObjectsReferenceRegistry.cpp',
-               'InfoDictionary.cpp',
-               'InputAscii85DecodeStream.cpp',
-               'InputBufferedStream.cpp',
-               'InputByteArrayStream.cpp',
-               'InputCharStringDecodeStream.cpp',
-               'InputDCTDecodeStream.cpp',
-               'InputFile.cpp',
-               'InputFileStream.cpp',
-               'InputFlateDecodeStream.cpp',
-               'InputLimitedStream.cpp',
-               'InputPFBDecodeStream.cpp',
-               'InputPredictorPNGAverageStream.cpp',
-               'InputPredictorPNGNoneStream.cpp',
-               'InputPredictorPNGOptimumStream.cpp',
-               'InputPredictorPNGPaethStream.cpp',
-               'InputPredictorPNGSubStream.cpp',
-               'InputPredictorPNGUpStream.cpp',
-               'InputPredictorTIFFSubStream.cpp',
-               'InputStreamSkipperStream.cpp',
-               'InputStringBufferStream.cpp',
-               'JPEGImageHandler.cpp',
-               'JPEGImageInformation.cpp',
-               'JPEGImageParser.cpp',
-               'Log.cpp',
-               'MD5Generator.cpp',
-               'ObjectsContext.cpp',
-               'OpenTypeFileInput.cpp',
-               'OpenTypePrimitiveReader.cpp',
-               'OutputBufferedStream.cpp',
-               'OutputFile.cpp',
-               'OutputFileStream.cpp',
-               'OutputFlateDecodeStream.cpp',
-               'OutputFlateEncodeStream.cpp',
-               'OutputStreamTraits.cpp',
-               'OutputStringBufferStream.cpp',
-               'PageContentContext.cpp',
-               'PageTree.cpp',
-               'ParsedPrimitiveHelper.cpp',
-               'PDFArray.cpp',
-               'PDFBoolean.cpp',
-               'PDFDate.cpp',
-               'PDFDictionary.cpp',
-               'PDFDocEncoding.cpp',
-               'PDFDocumentCopyingContext.cpp',
-               'PDFDocumentHandler.cpp',
-               'PDFFormXObject.cpp',
-               'PDFHexString.cpp',
-               'PDFImageXObject.cpp',
-               'PDFIndirectObjectReference.cpp',
-               'PDFInteger.cpp',
-               'PDFLiteralString.cpp',
-               'PDFName.cpp',
-               'PDFNull.cpp',
-               'PDFObject.cpp',
-               'PDFObjectParser.cpp',
-               'PDFPage.cpp',
-               'PDFPageInput.cpp',
-               'PDFPageMergingHelper.cpp',
-               'PDFParser.cpp',
-               'PDFParserTokenizer.cpp',
-               'PDFReal.cpp',
-               'PDFRectangle.cpp',
-               'PDFStream.cpp',
-               'PDFStreamInput.cpp',
-               'PDFSymbol.cpp',
-               'PDFTextString.cpp',
-               'PDFUsedFont.cpp',
-               'PDFWriter.cpp',
-               'PFMFileReader.cpp',
-               'PrimitiveObjectsWriter.cpp',
-               'PSBool.cpp',
-               'RefCountObject.cpp',
-               'ResourcesDictionary.cpp',
-               'StandardEncoding.cpp',
-               'StateReader.cpp',
-               'StateWriter.cpp',
-               'TIFFImageHandler.cpp',
-               'TiffUsageParameters.cpp',
-               'Timer.cpp',
-               'TimersRegistry.cpp',
-               'Trace.cpp',
-               'TrailerInformation.cpp',
-               'TrueTypeANSIFontWriter.cpp',
-               'TrueTypeDescendentFontWriter.cpp',
-               'TrueTypeEmbeddedFontWriter.cpp',
-               'TrueTypePrimitiveWriter.cpp',
-               'Type1Input.cpp',
-               'Type1ToCFFEmbeddedFontWriter.cpp',
-               'Type1ToType2Converter.cpp',
-               'Type2CharStringWriter.cpp',
-               'UnicodeString.cpp',
-               'UppercaseSequance.cpp',
-               'UsedFontsRepository.cpp',
-               'WinAnsiEncoding.cpp',
-               'WrittenFontCFF.cpp',
-               'WrittenFontTrueType.cpp',
-               'XObjectContentContext.cpp',
-            ]), **config)
+        make_extension('hummus.document'),
+        make_extension(
+            name='hummus.interface',
+            sources=find('lib/python/interface', ['*.cxx'])),
     ]
 )
 
