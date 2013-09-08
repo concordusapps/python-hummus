@@ -115,13 +115,12 @@ def make_library(name, directory):
     return [name, dict(sources=find(directory, patterns), **config)]
 
 
-# class build_ext(_build_ext):
+class build_ext(_build_ext):
 
-#     def run(self):
-#         self.run_command('build_clib')
-#         _build_ext.run(self)
+    def run(self):
+        self.run_command('build_clib')
+        _build_ext.run(self)
 
-build_ext = _build_ext
 
 setup(
     name='hummus',
