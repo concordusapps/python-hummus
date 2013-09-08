@@ -46,7 +46,7 @@ cdef class Document:
         else:
             # Initiate the underlying PDF-Writer for operations towards
             # a file.
-            self._handle.StartPDF(to_string(self._name), ePDFVersion17)
+            self._handle.StartPDF(to_string(self._name), ePDFVersion13)
 
     def __enter__(self):
         self.begin()
@@ -65,7 +65,7 @@ cdef class Document:
             self._handle.EndPDF()
 
         # Reset the PDF-Writer for further operations.
-        self._handle.Reset()
+        # self._handle.Reset()
 
     def __exit__(self, *args):
         self.end()
@@ -90,6 +90,7 @@ cdef class Document:
         # Wrap the handle.
         result = Context.__new__(Context)
         result._document = &self._handle
+        result._page = page
         result._handle = handle
 
         # Return our new context.
@@ -105,10 +106,9 @@ cdef class Document:
 
         # Instantiate a page and a context.
         page = Page()
-        context = self.Context(page)
-
-        # Yield the context.
-        yield context
+        with self.Context(page) as context:
+            # Yield the context.
+            yield context
 
         # Add the page to the document.
         self.add(page)
