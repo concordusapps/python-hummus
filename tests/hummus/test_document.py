@@ -6,7 +6,7 @@ import os
 
 def assert_pdf(filename):
     with open(filename, 'rb') as stream:
-        assert stream.read(8) == b'%PDF-1.7'
+        assert stream.read(4) == b'%PDF'
 
 
 def test_document_file():

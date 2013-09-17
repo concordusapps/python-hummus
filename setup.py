@@ -7,12 +7,7 @@ import subprocess
 from fnmatch import fnmatch
 from os.path import join
 from functools import partial
-from Cython.Distutils import build_ext as _build_ext
 import os
-
-
-def prefix(prefix, filenames):
-    return list(map(partial(join, prefix), filenames))
 
 
 def find(directory, patterns):
@@ -26,77 +21,65 @@ def find(directory, patterns):
     return result
 
 
-PKGCONFIG_TOKEN_MAP = {
-    '-D': 'define_macros',
-    '-I': 'include_dirs',
-    '-L': 'library_dirs',
-    '-l': 'libraries'
-}
+class lazy(object):
+
+    def __init__(self, function):
+        self._function = function
+        self._args = [], {}
+        self._result = None
+
+    def __len__(self):
+        return self.__len__()
+
+    def __iter__(self):
+        return self.__iter__()
+
+    def __getattribute__(self, name):
+        if not name.startswith('__') and name.startswith('_'):
+            return super(lazy, self).__getattribute__(name)
+
+        if self._result is None:
+            self._result = self._function(*self._args[0], **self._args[1])
+
+        return getattr(self._result, name)
+
+    def __call__(self, *args, **kwargs):
+        self._args = args, kwargs
+        return self
 
 
-def pkgconfig(*packages):
-    """
-    Run the `pkg-config` utility to determine locations of includes,
-    libraries, etc. for dependencies.
-    """
-    config = defaultdict(set)
-
-    # Execute the command in a subprocess and communicate the output.
-    command = "pkg-config --libs --cflags %s" % ' '.join(packages)
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-    out, _ = process.communicate()
-
-    # Clean the output.
-    out = out.decode('utf8')
-    out = out.replace('\\\"', "")
-
-    # Iterate throught the tokens of the output.
-    for token in out.split():
-        key = PKGCONFIG_TOKEN_MAP.get(token[:2])
-        if key:
-            config[key].add(token[2:].strip())
-
-    # Convert sets to lists.
-    for name in config:
-        config[name] = list(config[name])
-
-    # Iterate and resolve define macros.
-    macros = []
-    for declaration in config['define_macros']:
-        macro = tuple(declaration.split('='))
-        if len(macro) == 1:
-            macro += '',
-
-        macros.append(macro)
-
-    config['define_macros'] = macros
-
-    # Return discovered configuration.
-    return config
-
-
-# Load the metadata for inclusion in the package.
 # Navigate, import, and retrieve the metadata of the project.
 meta = get_importer('src/hummus').find_module('meta').load_module('meta')
 
-# Process the `pkg-config` utility and discover include and library
-# directories.
-config = pkgconfig('zlib', 'libtiff-4', 'freetype2')
 
-# Add libjpeg (no .pc file).
-config['libraries'].append('jpeg')
+def make_config():
+    from pkgconfig import parse
 
-# Add hummus.
-config['include_dirs'].insert(0, 'lib/hummus/PDFWriter')
-config['include_dirs'].insert(0, 'lib/python')
+    # Process the `pkg-config` utility and discover include and library
+    # directories.
+    config = {}
+    for lib in ['zlib', 'libtiff-4', 'freetype2']:
+        config.update(parse(lib))
 
-# Add local library.
-config['include_dirs'].insert(0, 'src')
+    # Add libjpeg (no .pc file).
+    config['libraries'].add('jpeg')
 
-# Discover additional c++ sources for hummus.
-sources = find('lib/python', ['*.cxx'])
+    # List-ify config for setuptools.
+    for key in config:
+        config[key] = list(config[key])
+
+    # Add hummus.
+    config['include_dirs'].insert(0, 'lib/hummus/PDFWriter')
+    config['include_dirs'].insert(0, 'lib/python')
+
+    # Add local library.
+    config['include_dirs'].insert(0, 'src')
+
+    # Return built config.
+    return config
 
 
+@lazy
 def make_extension(name, sources=None, cython=True):
     # Resolve extension location from name.
     location = join('src', *name.split('.'))
@@ -107,19 +90,13 @@ def make_extension(name, sources=None, cython=True):
         name=name,
         sources=sources + [location] if sources else [location],
         language='c++',
-        **config)
+        **make_config())
 
 
+@lazy
 def make_library(name, directory):
     patterns = ['*.cxx', '*.cpp']
-    return [name, dict(sources=find(directory, patterns), **config)]
-
-
-class build_ext(_build_ext):
-
-    def run(self):
-        self.run_command('build_clib')
-        _build_ext.run(self)
+    return [name, dict(sources=find(directory, patterns), **make_config())]
 
 
 setup(
@@ -139,12 +116,15 @@ setup(
     ],
     package_dir={'hummus': 'src/hummus'},
     packages=find_packages('src'),
+    setup_requires=[
+        'setuptools_cython',
+        'pkgconfig'
+    ],
     install_requires=[
     ],
     extras_require={
         'test': ['pytest'],
     },
-    cmdclass={'build_ext': build_ext},
     libraries=[
         make_library('hummus', 'lib/hummus/PDFWriter'),
     ],
