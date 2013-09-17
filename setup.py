@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages, Extension
 from pkgutil import get_importer
-from collections import defaultdict
-import subprocess
+from functools import wraps
 from fnmatch import fnmatch
 from os.path import join
-from functools import partial
 import os
 
 
@@ -21,31 +19,47 @@ def find(directory, patterns):
     return result
 
 
-class lazy(object):
+def lazy(function):
 
-    def __init__(self, function):
-        self._function = function
-        self._args = [], {}
-        self._result = None
+    @wraps(function)
+    def wrapped(*args, **kwargs):
 
-    def __len__(self):
-        return self.__len__()
+        class LazyProxy(object):
 
-    def __iter__(self):
-        return self.__iter__()
+            def __init__(self, function, args, kwargs):
+                self._function = function
+                self._args = args
+                self._kwargs = kwargs
+                self._result = None
 
-    def __getattribute__(self, name):
-        if not name.startswith('__') and name.startswith('_'):
-            return super(lazy, self).__getattribute__(name)
+            def __len__(self):
+                return self.__len__()
 
-        if self._result is None:
-            self._result = self._function(*self._args[0], **self._args[1])
+            def __iter__(self):
+                return self.__iter__()
 
-        return getattr(self._result, name)
+            def __getattribute__(self, name):
+                if name in ['_function', '_args', '_kwargs', '_result']:
+                    return super(LazyProxy, self).__getattribute__(name)
 
-    def __call__(self, *args, **kwargs):
-        self._args = args, kwargs
-        return self
+                if self._result is None:
+                    self._result = self._function(*self._args, **self._kwargs)
+
+                return object.__getattribute__(self._result, name)
+
+            def __setattr__(self, name, value):
+                if name in ['_function', '_args', '_kwargs', '_result']:
+                    super(LazyProxy, self).__setattr__(name, value)
+                    return
+
+                if self._result is None:
+                    self._result = self._function(*self._args, **self._kwargs)
+
+                setattr(self._result, name, value)
+
+        return LazyProxy(function, args, kwargs)
+
+    return wrapped
 
 
 # Navigate, import, and retrieve the metadata of the project.
