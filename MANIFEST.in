@@ -1,0 +1,2 @@
+recursive-include src *.pxd
+recursive-include lib *.cpp *.h

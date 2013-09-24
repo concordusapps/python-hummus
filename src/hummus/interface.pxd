@@ -3,7 +3,7 @@ from cpython.ref cimport PyObject
 
 
 cdef extern from "IOBasicTypes.h":
-    ctypedef unsigned char Byte
+    ctypedef unsigned char Byte "unsigned char"
     ctypedef unsigned char const_Byte "const unsigned char"
 
     ctypedef size_t LongBufferSizeType
@@ -25,9 +25,24 @@ cdef extern from "interface/PythonByteWriterWithPosition.h":
         LongFilePositionType GetCurrentPosition()
 
 
+cdef extern from "interface/PythonByteReader.h":
+
+    cdef cppclass PythonByteReader:
+        PythonByteReader(PyObject* obj)
+        LongBufferSizeType Read(Byte* stream, LongBufferSizeType size)
+
+
 cdef class ByteWriter:
     cdef PythonByteWriter* _handle
 
 
 cdef class ByteWriterWithPosition:
     cdef PythonByteWriterWithPosition* _handle
+
+
+cdef class ByteReader:
+    cdef PythonByteReader* _handle
+
+
+#cdef class ByteReaderWithPosition:
+#    cdef PythonByteReaderWithPosition* _handle

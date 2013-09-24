@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from hummus.interface import ByteWriter, ByteWriterWithPosition
+from hummus.interface import (ByteWriter, ByteWriterWithPosition,
+                              ByteReader)
 
 
 class StreamByteWriter(ByteWriter):
@@ -23,3 +24,22 @@ class StreamByteWriterWithPosition(ByteWriterWithPosition):
 
     def tell(self):
         return self._stream.tell()
+
+
+class StreamByteReader(ByteReader):
+
+    def __init__(self, stream):
+        #! The file-like object to send reads to.
+        self._stream = stream
+
+        #! Have we hit the end of the stream.
+        self._end = False
+
+    def read(self, size):
+        data = self._stream.read(size)
+        if size != 0 and data == '':
+            self._end = True
+        return data
+
+    def __bool__(self):
+        return self._end

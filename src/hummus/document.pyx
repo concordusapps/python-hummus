@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 from contextlib import contextmanager
 from libcpp.string cimport string
 from hummus.document cimport *
@@ -15,25 +16,25 @@ cdef class Document:
     cdef str _name
     cdef PythonByteWriterWithPosition* _stream
 
-    def __cinit__(self, stream=None, *, str filename=None):
+    def __cinit__(self, obj=None):
         cdef PythonByteWriterWithPosition* stream_handle = NULL
         cdef ByteWriterWithPosition base_writer
 
-        # Ensure we have a stream or a filename.
-        if stream is None and filename is None:
-            raise ValueError("One of 'stream' or 'filename' must be given.")
-
-        if stream is not None:
+        if hasattr(obj, 'write'):
             # Construct a streaming writer.
-            writer = StreamByteWriterWithPosition(stream)
+            writer = StreamByteWriterWithPosition(obj)
 
             # Pull out the low-level handle.
             base_writer = <ByteWriterWithPosition>writer
             stream_handle = base_writer._handle
 
-        # Store the filename or stream to save the document to.
-        self._stream = stream_handle
-        self._name = filename or ':memory:'
+            # Store the name and stream.
+            self._stream = stream_handle
+            self._name = ':memory:'
+
+        else:
+            # Store the filename.
+            self._name = obj
 
     def begin(self):
         """Begin operations on the PDF.

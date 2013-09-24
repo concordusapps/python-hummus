@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages, Extension
 from pkgutil import get_importer
+from collections import defaultdict
 from functools import wraps
 from fnmatch import fnmatch
 from os.path import join
@@ -71,9 +72,10 @@ def make_config():
 
     # Process the `pkg-config` utility and discover include and library
     # directories.
-    config = {}
+    config = defaultdict(set)
     for lib in ['zlib', 'libtiff-4', 'freetype2']:
-        config.update(parse(lib))
+        for key, value in parse(lib).items():
+            config[key].update(value)
 
     # Add libjpeg (no .pc file).
     config['libraries'].add('jpeg')
@@ -135,6 +137,7 @@ setup(
         'pkgconfig'
     ],
     install_requires=[
+        'six',
     ],
     extras_require={
         'test': ['pytest'],
