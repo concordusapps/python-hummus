@@ -17,5 +17,5 @@ IOBasicTypes::LongBufferSizeType PythonByteReader::Read(
 }
 
 bool PythonByteReader::NotEnded() {
-    return _hummus_br_eof(_obj);
+    return _hummus_br_not_ended(_obj);
 }

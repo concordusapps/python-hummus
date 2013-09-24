@@ -19,7 +19,7 @@ def find_font(family, weight="normal", slant="roman"):
 
 class Font:
 
-    def __init__(self, family, size=12, bold=False, italic=False):
+    def __init__(self, family, bold=False, italic=False):
         # Find the font.
         self.file = find_font(
             family,
@@ -28,9 +28,11 @@ class Font:
 
         # Store properties of the font.
         self.family = family
-        self.size = size
         self.bold = bold
         self.italic = italic
 
     def __repr__(self):
         return '<Font(%r)>' % self.file
+
+    def __bool__(self):
+        return bool(self.file)

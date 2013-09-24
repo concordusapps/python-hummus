@@ -2,7 +2,8 @@
 from libcpp.string cimport string
 from libcpp.pair cimport pair
 from libcpp.list cimport list
-from hummus.interface cimport PythonByteWriterWithPosition
+from hummus.interface cimport (PythonByteWriterWithPosition,
+                               PythonByteReaderWithPosition)
 from hummus.context cimport PageContentContext
 from hummus.page cimport *
 
@@ -73,3 +74,6 @@ cdef extern from "PDFWriter.h":
 
         EStatusCodeAndObjectIDTypeList CreateFormXObjectsFromPDF(
             const string&, const PDFPageRange&, EPDFPageBox)
+
+        EStatusCodeAndObjectIDTypeList CreateFormXObjectsFromPDF(
+            PythonByteReaderWithPosition*, const PDFPageRange&, EPDFPageBox)

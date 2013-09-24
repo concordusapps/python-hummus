@@ -3,6 +3,9 @@ from hummus.utils cimport to_string
 from hummus.document cimport *
 from hummus.page cimport *
 from hummus.font import Font
+from hummus.interface cimport (
+    PythonByteReaderWithPosition, ByteReaderWithPosition)
+from hummus.stream import StreamByteReaderWithPosition
 
 
 cdef class Context:
@@ -29,7 +32,7 @@ cdef class Context:
         def __set__(self, value):
             self._page.media_box = value
 
-    def write_text(self, text, font):
+    def write_text(self, text, font, size=10, x=0, y=0):
         cdef PDFUsedFont* font_obj
 
         # Create a font object out of the passed python font.
@@ -41,33 +44,44 @@ cdef class Context:
         self._handle.BT()
 
         self._handle.k(0, 0, 0, 1)
-        self._handle.Tf(font_obj, font.size)
-        self._handle.Tm(1, 0, 0, 1, 90, 610)
+        self._handle.Tf(font_obj, size)
+        self._handle.Tm(1, 0, 0, 1, x, y)
         self._handle.Tj(to_string(text))
 
         # Finish the text operation.
         self._handle.ET()
 
-    def embed_document(self, stream=None, *, filename=None):
+    def embed_document(self, source, page=0):
         cdef PDFPageRange page_range
         cdef ResourcesDictionary* resources
-
-        if stream and not filename:
-            raise NotImplementedError(
-                'Embedding from stream is not supported yet.')
+        cdef PythonByteReaderWithPosition* stream_handle = NULL
+        cdef ByteReaderWithPosition base_reader
 
         # Construct a page range to extract from the PDF.
         # TODO: Allow specified range.
         page_range.mType = eRangeTypeSpecific
-        page_range.mSpecificRanges = ((0, 0),)
+        page_range.mSpecificRanges = ((page, page),)
 
-        # Extract page information from the PDF.
-        status, pages = self._document.CreateFormXObjectsFromPDF(
-            to_string(filename), page_range, ePDFPageBoxMediaBox)
+        if hasattr(source, 'read'):
+            # Construct a streaming reader.
+            reader = StreamByteReaderWithPosition(source)
+
+            # Pull out the low-level handle.
+            base_reader = <ByteReaderWithPosition>reader
+            stream_handle = base_reader._handle
+
+            # Extract page information from the PDF.
+            status, pages = self._document.CreateFormXObjectsFromPDF(
+                stream_handle, page_range, ePDFPageBoxMediaBox)
+
+        else:
+            # Extract page information from the PDF.
+            status, pages = self._document.CreateFormXObjectsFromPDF(
+                to_string(source), page_range, ePDFPageBoxMediaBox)
 
         if status < 0:
             raise ValueError(
-                'Document not recognized as a valid PDF', filename)
+                'Document not recognized as a valid PDF', source)
 
         # Prepare the context for the operation.
         self._handle.q()

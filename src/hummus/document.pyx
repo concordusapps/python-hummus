@@ -16,13 +16,13 @@ cdef class Document:
     cdef str _name
     cdef PythonByteWriterWithPosition* _stream
 
-    def __cinit__(self, obj=None):
+    def __cinit__(self, source=None):
         cdef PythonByteWriterWithPosition* stream_handle = NULL
         cdef ByteWriterWithPosition base_writer
 
-        if hasattr(obj, 'write'):
+        if hasattr(source, 'write'):
             # Construct a streaming writer.
-            writer = StreamByteWriterWithPosition(obj)
+            writer = StreamByteWriterWithPosition(source)
 
             # Pull out the low-level handle.
             base_writer = <ByteWriterWithPosition>writer
@@ -34,7 +34,7 @@ cdef class Document:
 
         else:
             # Store the filename.
-            self._name = obj
+            self._name = source
 
     def begin(self):
         """Begin operations on the PDF.
@@ -47,7 +47,7 @@ cdef class Document:
         else:
             # Initiate the underlying PDF-Writer for operations towards
             # a file.
-            self._handle.StartPDF(to_string(self._name), ePDFVersion13)
+            self._handle.StartPDF(to_string(self._name), ePDFVersion17)
 
     def __enter__(self):
         self.begin()
