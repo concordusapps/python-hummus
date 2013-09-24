@@ -12,7 +12,7 @@ def assert_pdf(filename):
 def test_document_file():
     with NamedTemporaryFile(delete=False) as stream:
         # Run through a normal cycle.
-        document = hummus.Document(filename=stream.name)
+        document = hummus.Document(stream.name)
         document.begin()
         document.end()
 
