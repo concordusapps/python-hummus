@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from hummus.utils cimport to_string
-from hummus.document cimport *
+from hummus.writer cimport *
 from hummus.page cimport *
 from hummus.font import Font
-from hummus.interface cimport (
-    PythonByteReaderWithPosition, ByteReaderWithPosition)
-from hummus.stream import StreamByteReaderWithPosition
+from hummus.interface cimport *
+from hummus.reader cimport PageInput
 
 
 cdef class Context:
@@ -51,37 +50,29 @@ cdef class Context:
         # Finish the text operation.
         self._handle.ET()
 
-    def embed_document(self, source, page=0):
+    def embed(self, PageInput page):
         cdef PDFPageRange page_range
         cdef ResourcesDictionary* resources
         cdef PythonByteReaderWithPosition* stream_handle = NULL
         cdef ByteReaderWithPosition base_reader
+        cdef int current
 
         # Construct a page range to extract from the PDF.
         # TODO: Allow specified range.
         page_range.mType = eRangeTypeSpecific
-        page_range.mSpecificRanges = ((page, page),)
+        page_range.mSpecificRanges = ((page.index, page.index),)
 
-        if hasattr(source, 'read'):
-            # Construct a streaming reader.
-            reader = StreamByteReaderWithPosition(source)
+        # Set the stream to the beginning.
+        current = page._parent._stream.tell()
+        page._parent._stream.seek(0)
 
-            # Pull out the low-level handle.
-            base_reader = <ByteReaderWithPosition>reader
-            stream_handle = base_reader._handle
+        # Pull out the low-level handle.
+        base_reader = <ByteReaderWithPosition>page._parent._stream
+        stream_handle = base_reader._handle
 
-            # Extract page information from the PDF.
-            status, pages = self._document.CreateFormXObjectsFromPDF(
-                stream_handle, page_range, ePDFPageBoxMediaBox)
-
-        else:
-            # Extract page information from the PDF.
-            status, pages = self._document.CreateFormXObjectsFromPDF(
-                to_string(source), page_range, ePDFPageBoxMediaBox)
-
-        if status < 0:
-            raise ValueError(
-                'Document not recognized as a valid PDF', source)
+        # Extract information from the PDF.
+        status, pages = self._document.CreateFormXObjectsFromPDF(
+            stream_handle, page_range, ePDFPageBoxMediaBox)
 
         # Prepare the context for the operation.
         self._handle.q()
@@ -91,3 +82,47 @@ cdef class Context:
 
         # Finish the operation.
         self._handle.Q()
+
+        # Reset the stream.
+        page._parent._stream.seek(current)
+
+    # def embed_document(self, source, page=0):
+    #     cdef PDFPageRange page_range
+    #     cdef ResourcesDictionary* resources
+    #     cdef PythonByteReaderWithPosition* stream_handle = NULL
+    #     cdef ByteReaderWithPosition base_reader
+
+    #     # Construct a page range to extract from the PDF.
+    #     # TODO: Allow specified range.
+    #     page_range.mType = eRangeTypeSpecific
+    #     page_range.mSpecificRanges = ((page, page),)
+
+    #     if hasattr(source, 'read'):
+    #         # Construct a streaming reader.
+    #         reader = StreamByteReaderWithPosition(source)
+
+    #         # Pull out the low-level handle.
+    #         base_reader = <ByteReaderWithPosition>reader
+    #         stream_handle = base_reader._handle
+
+    #         # Extract page information from the PDF.
+    #         status, pages = self._document.CreateFormXObjectsFromPDF(
+    #             stream_handle, page_range, ePDFPageBoxMediaBox)
+
+    #     else:
+    #         # Extract page information from the PDF.
+    #         status, pages = self._document.CreateFormXObjectsFromPDF(
+    #             to_string(source), page_range, ePDFPageBoxMediaBox)
+
+    #     if status < 0:
+    #         raise ValueError(
+    #             'Document not recognized as a valid PDF', source)
+
+    #     # Prepare the context for the operation.
+    #     self._handle.q()
+
+    #     resources = &(self._page._handle.GetResourcesDictionary())
+    #     self._handle.Do(resources.AddFormXObjectMapping(pages[0]))
+
+    #     # Finish the operation.
+    #     self._handle.Q()

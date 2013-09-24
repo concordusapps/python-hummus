@@ -12,6 +12,9 @@ class StreamByteWriter(ByteWriter):
     def write(self, data):
         return self._stream.write(data)
 
+    def close(self):
+        self._stream.close()
+
 
 class StreamByteWriterWithPosition(ByteWriterWithPosition):
 
@@ -24,6 +27,9 @@ class StreamByteWriterWithPosition(ByteWriterWithPosition):
 
     def tell(self):
         return self._stream.tell()
+
+    def close(self):
+        self._stream.close()
 
 
 class StreamByteReader(ByteReader):
@@ -43,6 +49,9 @@ class StreamByteReader(ByteReader):
 
     def __bool__(self):
         return self._end
+
+    def close(self):
+        self._stream.close()
 
 
 class StreamByteReaderWithPosition(ByteReaderWithPosition):
@@ -68,3 +77,6 @@ class StreamByteReaderWithPosition(ByteReaderWithPosition):
 
     def tell(self):
         return self._stream.tell()
+
+    def close(self):
+        self._stream.close()

@@ -146,7 +146,8 @@ setup(
         make_library('hummus', 'lib/hummus/PDFWriter'),
     ],
     ext_modules=[
-        make_extension('hummus.document'),
+        make_extension('hummus.reader'),
+        make_extension('hummus.writer'),
         make_extension('hummus.rectangle'),
         make_extension('hummus.page'),
         make_extension('hummus.context'),

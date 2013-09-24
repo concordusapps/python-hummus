@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from libcpp.string cimport string
-from hummus.document cimport PDFWriter, PDFUsedFont
+from hummus.writer cimport PDFWriter, PDFUsedFont
 from hummus.page cimport Page
 
 

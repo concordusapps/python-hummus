@@ -8,7 +8,7 @@
 # Python
 *.pyc
 *.pyo
-*.egg-info
+*.egg*
 dist/
 build/
 

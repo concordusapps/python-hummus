@@ -2,16 +2,15 @@
 import six
 from contextlib import contextmanager
 from libcpp.string cimport string
-from hummus.document cimport *
+from hummus.writer cimport *
 from hummus.utils cimport to_string
-from hummus.interface cimport (
-    PythonByteWriterWithPosition, ByteWriterWithPosition)
+from hummus.interface cimport *
 from hummus.stream import StreamByteWriterWithPosition
 from hummus.page import Page
 from hummus.context cimport PageContentContext, Context
 
 
-cdef class Document:
+cdef class Writer:
     cdef PDFWriter _handle
     cdef str _name
     cdef PythonByteWriterWithPosition* _stream

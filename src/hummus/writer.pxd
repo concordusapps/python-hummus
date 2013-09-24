@@ -2,14 +2,9 @@
 from libcpp.string cimport string
 from libcpp.pair cimport pair
 from libcpp.list cimport list
-from hummus.interface cimport (PythonByteWriterWithPosition,
-                               PythonByteReaderWithPosition)
+from hummus.interface cimport *
 from hummus.context cimport PageContentContext
 from hummus.page cimport *
-
-
-# cdef extern from *:
-#     ctypedef int long_unsigned_int "long unsigned int"
 
 
 cdef extern from "PDFWriter.h" namespace "PDFPageRange":

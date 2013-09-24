@@ -20,17 +20,22 @@ def main(filename):
         raise RuntimeError('No font found for %r' % font_family)
 
     # Initialize PDF document on a stream.
-    with open('output.pdf', 'wb') as stream, Document(stream) as document:
+    with Document('output.pdf') as document:
 
         # Initialize a new page and begin its context.
         with document.Page() as ctx:
 
-            # Embed the document from a memory stream.
-            with open(filename, 'rb') as instream:
-                ctx.embed_document(instream, page=4)
+            # Open the document to embed.
+            with Document(filename, 'r') as embed:
+                # Set the media box for the page to the same as the
+                # page to embed.
+                ctx.media_box = embed[0].media_box
 
-            # Write some text.
-            ctx.write_text('Hello World', font, size=14, x=100, y=60)
+                # Embed the document.
+                ctx.embed(embed[0])
+
+            # # Write some text.
+            # ctx.add(Text('Hello World', font, size=14, x=100, y=60))
 
 
 if __name__ == '__main__':

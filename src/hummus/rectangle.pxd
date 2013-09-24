@@ -5,6 +5,7 @@ cdef extern from "PDFRectangle.h":
 
     cdef cppclass PDFRectangle:
         PDFRectangle(float x0, float y0, float x1, float y1)
+        PDFRectangle(const PDFRectangle& rhs)
 
         float LowerLeftX
         float LowerLeftY
