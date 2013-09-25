@@ -13,7 +13,7 @@ cdef class Page:
         if self._handle != NULL:
             del self._handle
 
-    property media_box:
+    property box:
 
         def __get__(self):
             cdef PDFRectangle* handle

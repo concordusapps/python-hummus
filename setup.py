@@ -138,6 +138,7 @@ setup(
     ],
     install_requires=[
         'six',
+        'wand',
     ],
     extras_require={
         'test': ['pytest'],
@@ -151,6 +152,8 @@ setup(
         make_extension('hummus.rectangle'),
         make_extension('hummus.page'),
         make_extension('hummus.context'),
+        make_extension('hummus.text'),
+        make_extension('hummus.image'),
         make_extension(
             name='hummus.interface',
             sources=find('lib/python/interface', ['*.cxx'])),

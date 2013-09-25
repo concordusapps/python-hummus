@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
-from hummus import Document, Font, Text
+from hummus import Document, Font, Text, Image, Rectangle
 
 
 def main(filename):
     """
-    Creates a PDF by embedding the first page from the given document and
+    Creates a PDF by embedding the first page from the given image and
     writes some text to it.
 
     @param[in] filename
-        The source filename of the PDF document to embed.
+        The source filename of the image to embed.
     """
 
     # Prepare font.
@@ -25,14 +25,19 @@ def main(filename):
         # Initialize a new page and begin its context.
         with document.Page() as ctx:
 
-            # Open the document to embed.
-            with Document(filename, 'r') as embed:
-                # Set the media box for the page to the same as the
-                # page to embed.
-                ctx.box = embed[0].box
+            # Open the image to embed.
+            with Image(filename) as embed:
 
-                # Embed the document.
-                ctx.embed(embed[0])
+            # Open the document to embed.
+            # with Document(filename, 'r') as embed:
+
+                # Set the media box for the page to the same as the
+                # image to embed.
+                # ctx.box = embed.box
+                ctx.box = Rectangle(0, 0, 600, 600)
+
+                # Embed the image.
+                ctx.embed(embed)
 
             # Write some text.
             ctx.add(Text('Hello World', font, size=14, x=100, y=60))

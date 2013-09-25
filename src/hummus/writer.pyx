@@ -89,7 +89,7 @@ cdef class Writer:
 
         # Wrap the handle.
         result = Context.__new__(Context)
-        result._document = &self._handle
+        result._writer = &self._handle
         result._page = page
         result._handle = handle
 

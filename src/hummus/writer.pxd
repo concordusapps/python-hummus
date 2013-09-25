@@ -14,6 +14,12 @@ cdef extern from "PDFWriter.h" namespace "PDFPageRange":
     ERangeType eRangeTypeSpecific
 
 
+cdef extern from "PDFFormXObject.h":
+
+    cdef cppclass PDFFormXObject:
+        int GetObjectID()
+
+
 cdef extern from "PDFWriter.h":
 
     ctypedef int EPDFVersion
@@ -66,6 +72,11 @@ cdef extern from "PDFWriter.h":
         int WritePage(PDFPage*)
 
         PDFUsedFont* GetFontForFile(string filename, int index=0)
+
+        PDFFormXObject* CreateFormXObjectFromJPGFile(const string&)
+
+        PDFFormXObject* CreateFormXObjectFromJPGStream(
+            PythonByteReaderWithPosition*)
 
         EStatusCodeAndObjectIDTypeList CreateFormXObjectsFromPDF(
             const string&, const PDFPageRange&, EPDFPageBox)

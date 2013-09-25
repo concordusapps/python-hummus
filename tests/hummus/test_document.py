@@ -40,11 +40,11 @@ def test_document_stream():
 def test_page_size():
     page = hummus.Page()
 
-    assert page.media_box.left == 0
+    assert page.box.left == 0
 
-    page.media_box = hummus.Rectangle(0, 0, 800, 1000)
+    page.box = hummus.Rectangle(0, 0, 800, 1000)
 
-    assert page.media_box.bottom == 1000
+    assert page.box.bottom == 1000
 
 
 def test_basic_text():

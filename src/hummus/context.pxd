@@ -20,11 +20,12 @@ cdef extern from "PageContentContext.h":
         void Tf(PDFUsedFont*, float size)
 
         void q()
+        void cm(float, float, float, float, float, float)
         void Q()
 
         void Do(string)
 
 cdef class Context:
-    cdef PDFWriter* _document
+    cdef PDFWriter* _writer
     cdef Page _page
     cdef PageContentContext* _handle

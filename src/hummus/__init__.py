@@ -4,10 +4,15 @@ from .document import Document
 from .page import Page
 from .rectangle import Rectangle
 from .font import Font
+from .text import Text
+from .image import Image
+
 
 __all__ = [
     'Document',
     'Page',
     'Rectangle',
-    'Font'
+    'Font',
+    'Text',
+    'Image'
 ]

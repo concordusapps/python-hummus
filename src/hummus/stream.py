@@ -65,7 +65,7 @@ class StreamByteReaderWithPosition(ByteReaderWithPosition):
 
     def read(self, size):
         data = self._stream.read(size)
-        if size != 0 and data == '':
+        if size != 0 and len(data) == 0:
             self._end = True
         return data
 

@@ -4,6 +4,9 @@ from hummus.reader cimport *
 from hummus.writer cimport *
 from hummus.stream import StreamByteReaderWithPosition
 from hummus.rectangle cimport Rectangle, PDFRectangle
+from hummus.page cimport *
+from hummus.interface cimport *
+from hummus.context cimport *
 
 
 cdef class PageInput:
@@ -29,7 +32,7 @@ cdef class PageInput:
         def __get__(self):
             return self._index
 
-    property media_box:
+    property box:
 
         def __get__(self):
             cdef Rectangle result
@@ -46,6 +49,42 @@ cdef class PageInput:
         if self._handle == NULL:
             _obj = self._parent._handle.ParsePage(self._index)
             self._handle = new PDFPageInput(&self._parent._handle, _obj)
+
+    def embed_to(self, Context ctx):
+        cdef PDFPageRange page_range
+        cdef ResourcesDictionary* resources
+        cdef PythonByteReaderWithPosition* stream_handle = NULL
+        cdef ByteReaderWithPosition base_reader
+        cdef int current
+
+        # Construct a page range to extract from the PDF.
+        # TODO: Allow specified range.
+        page_range.mType = eRangeTypeSpecific
+        page_range.mSpecificRanges = ((self.index, self.index),)
+
+        # Set the stream to the beginning.
+        current = self._parent._stream.tell()
+        self._parent._stream.seek(0)
+
+        # Pull out the low-level handle.
+        base_reader = <ByteReaderWithPosition>self._parent._stream
+        stream_handle = base_reader._handle
+
+        # Extract information from the PDF.
+        status, pages = ctx._writer.CreateFormXObjectsFromPDF(
+            stream_handle, page_range, ePDFPageBoxMediaBox)
+
+        # Prepare the context for the operation.
+        ctx._handle.q()
+
+        resources = &(ctx._page._handle.GetResourcesDictionary())
+        ctx._handle.Do(resources.AddFormXObjectMapping(pages[0]))
+
+        # Finish the operation.
+        ctx._handle.Q()
+
+        # Reset the stream.
+        self._parent._stream.seek(current)
 
 
 cdef class Reader:
