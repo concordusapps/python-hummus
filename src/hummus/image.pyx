@@ -34,21 +34,18 @@ cdef class Image:
                 with image.Image(image.sequence[index]).convert('jpeg') as o:
                     o.save(file=temp_stream)
 
-                # Close the wand image and reset the stream.
-                temp_stream.seek(0)
-
             else:
                 # Don't try and convert a JPEG image because PDF hates
                 # image magick JPEGs.
                 stream.seek(0)
                 temp_stream.write(stream.read())
-                temp_stream.seek(0)
 
         if managed:
             # Close our stream.
             stream.close()
 
         # Construct a streaming reader from the stream.
+        temp_stream.seek(0)
         self._stream = StreamByteReaderWithPosition(temp_stream)
 
     def __enter__(self):
