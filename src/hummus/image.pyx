@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import six
 import io
-import pexif
 from wand import image as wand
 from hummus.utils cimport to_string
 from hummus.context cimport *
