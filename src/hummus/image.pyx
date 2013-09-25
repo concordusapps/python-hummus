@@ -6,6 +6,7 @@ from wand import image as wand
 from hummus.utils cimport to_string
 from hummus.context cimport *
 from hummus.writer cimport *
+from hummus.rectangle cimport *
 from hummus.stream import StreamByteReaderWithPosition
 
 
@@ -18,6 +19,7 @@ cdef class Image:
     """
 
     cdef _stream
+    cdef Rectangle _box
 
     def __cinit__(self, source, index=0):
         # Ensure the source is a stream.
@@ -26,6 +28,9 @@ cdef class Image:
         # Construct a wand image stream over the source.
         key = 'filename' if isinstance(source, six.string_types) else 'file'
         with wand.Image(**{key: source}) as image:
+            # Save the size of the image.
+            self._box = Rectangle(bottom=image.height, right=image.width)
+
             # Set resolution units to undefined as PDF will embed a ghost
             # image if we do not. This is stupid by the way.
             image.units = 'undefined'
@@ -63,3 +68,8 @@ cdef class Image:
         resources = &(ctx._page._handle.GetResourcesDictionary())
         ctx._handle.Do(resources.AddFormXObjectMapping(obj.GetObjectID()))
         ctx._handle.Q()
+
+    property box:
+
+        def __get__(self):
+            return self._box

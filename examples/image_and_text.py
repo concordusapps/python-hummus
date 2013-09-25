@@ -28,13 +28,9 @@ def main(filename):
             # Open the image to embed.
             with Image(filename) as embed:
 
-            # Open the document to embed.
-            # with Document(filename, 'r') as embed:
-
                 # Set the media box for the page to the same as the
                 # image to embed.
-                # ctx.box = embed.box
-                ctx.box = Rectangle(0, 0, 600, 600)
+                ctx.box = embed.box
 
                 # Embed the image.
                 ctx.embed(embed)
