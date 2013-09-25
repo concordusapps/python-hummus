@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
-version = '0.3.1'
+version = '0.3.2'
 description = 'Pythonic API for hummus, the fast and free PDF reader / writer.'
