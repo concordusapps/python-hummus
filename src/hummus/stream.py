@@ -73,6 +73,7 @@ class StreamByteReaderWithPosition(ByteReaderWithPosition):
         return self._end
 
     def seek(self, offset, whence=0):
+        self._end = False
         self._stream.seek(offset, whence)
 
     def tell(self):
