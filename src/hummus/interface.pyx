@@ -65,14 +65,18 @@ cdef class ByteReader:
 
 cdef public api size_t _hummus_br_read(object self, Byte* data, int size):
     cdef bytes text = self.read(size)
+    if text is None:
+        return 0
+
     cdef Byte* content = text
     actual_size = len(text)
     memcpy(data, content, actual_size)
     return actual_size
 
 
+
 cdef public api size_t _hummus_br_not_ended(object self):
-    return not bool(self)
+    return bool(self)
 
 
 cdef class ByteReaderWithPosition:

@@ -38,17 +38,18 @@ class StreamByteReader(ByteReader):
         #! The file-like object to send reads to.
         self._stream = stream
 
-        #! Have we hit the end of the stream.
-        self._end = False
+        #! Figure out where the end marker should be.
+        position = self._stream.tell()
+        self._stream.seek(0, 2)
+        self._end = self._stream.tell()
+        self._stream.seek(position)
 
     def read(self, size):
         data = self._stream.read(size)
-        if size != 0 and data == '':
-            self._end = True
         return data
 
     def __bool__(self):
-        return self._end
+        return self._stream.tell() != self._end
 
     def close(self):
         self._stream.close()
@@ -60,20 +61,20 @@ class StreamByteReaderWithPosition(ByteReaderWithPosition):
         #! The file-like object to send reads to.
         self._stream = stream
 
-        #! Have we hit the end of the stream.
-        self._end = False
+        #! Figure out where the end marker should be.
+        position = self._stream.tell()
+        self._stream.seek(0, 2)
+        self._end = self._stream.tell()
+        self._stream.seek(position)
 
     def read(self, size):
         data = self._stream.read(size)
-        if size != 0 and len(data) == 0:
-            self._end = True
         return data
 
     def __bool__(self):
-        return self._end
+        return self._stream.tell() != self._end
 
     def seek(self, offset, whence=0):
-        self._end = False
         self._stream.seek(offset, whence)
 
     def tell(self):
