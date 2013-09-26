@@ -17,6 +17,8 @@ cdef extern from "PageContentContext.h":
 
         void Tj(string)
 
+        void Tr(int)
+
         void Tf(PDFUsedFont*, float size)
 
         void q()
