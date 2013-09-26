@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import zlib
+import re
 from hummus.interface cimport *
 from hummus.reader cimport *
 from hummus.writer cimport *
@@ -37,6 +39,7 @@ cdef class PageInput:
         def __get__(self):
             cdef Rectangle result
 
+            # Ensure we know what we are.
             self._parse()
 
             result = Rectangle.__new__(Rectangle)
@@ -44,11 +47,61 @@ cdef class PageInput:
             return result
 
     def _parse(self):
-        cdef PDFObject* _obj
+        cdef PDFDictionary* _obj
 
         if self._handle == NULL:
             _obj = self._parent._handle.ParsePage(self._index)
-            self._handle = new PDFPageInput(&self._parent._handle, _obj)
+            self._handle = new PDFPageInput(
+                &self._parent._handle, <PDFObject*>_obj)
+
+    def has_text(self):
+        """Figure out if there is text in this page.
+        """
+
+        cdef PDFDictionary* obj
+        cdef PDFStreamInput* contents
+        cdef PDFDictionary* info
+        cdef PDFObject* info_filter
+        cdef PDFObject* info_length
+
+        # Discover our contents.
+        obj = self._parent._handle.ParsePage(self._index)
+        contents = <PDFStreamInput*>self._parent._handle.QueryDictionaryObject(
+            obj, 'Contents')
+
+        if not contents:
+            return False
+
+        offset = contents.GetStreamContentStart()
+        info = contents.QueryStreamDictionary()
+        if not info.Exists('Length'):
+            return False
+
+        compressed = info.Exists('Filter')
+
+        info_length = info.QueryDirectObject('Length')
+        length = (<PDFInteger*>info_length).GetValue()
+        if not length:
+            return False
+
+        # Release low-level data structures.
+        info_length.Release()
+        info.Release()
+        obj.Release()
+        contents.Release()
+
+        # Read in data.
+        current = self._parent._stream.tell()
+        self._parent._stream.seek(offset)
+        data = self._parent._stream.read(length)
+        self._parent._stream.seek(current)
+
+        # Decompress data if needed.
+        if compressed:
+            data = zlib.decompress(data)
+
+        # Check for the Tj operator.
+        return re.search('TJ', data.decode('utf8'), re.IGNORECASE) is not None
 
     def embed_to(self, Context ctx):
         cdef PDFPageRange page_range
