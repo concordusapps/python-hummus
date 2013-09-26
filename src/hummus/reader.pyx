@@ -188,3 +188,7 @@ cdef class Reader:
 
     def __getitem__(self, index):
         return PageInput(self, index)
+
+    def __iter__(self):
+        for index in range(len(self)):
+            yield self[index]
