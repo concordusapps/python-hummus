@@ -98,7 +98,12 @@ cdef class PageInput:
 
         # Decompress data if needed.
         if compressed:
-            data = zlib.decompress(data)
+            try:
+                data = zlib.decompress(data)
+
+            except:
+                # Something went wrong here.
+                return False
 
         # Check for the Tj operator.
         return re.search('TJ', data.decode('utf8'), re.IGNORECASE) is not None
