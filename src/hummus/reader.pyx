@@ -62,7 +62,6 @@ cdef class PageInput:
         cdef PDFStreamInput* contents
         cdef PDFDictionary* info
         cdef PDFObject* info_filter
-        cdef PDFObject* info_length
 
         # Discover our contents.
         obj = self._parent._handle.ParsePage(self._index)
@@ -79,10 +78,10 @@ cdef class PageInput:
 
         compressed = info.Exists('Filter')
 
-        info_length = info.QueryDirectObject('Length')
+        info_length = self._parent._handle.QueryDictionaryObject(
+            info, 'Length')
+
         length = (<PDFInteger*>info_length).GetValue()
-        if not length:
-            return False
 
         # Release low-level data structures.
         info_length.Release()
