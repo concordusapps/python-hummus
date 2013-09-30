@@ -38,7 +38,6 @@ cdef class Image:
             with wand.Image(image.sequence[index]) as o:
                 o.format = 'jpeg'
                 o.save(file=temp_stream)
-                o.save(filename='something.jpg')
 
         # # Construct a streaming reader from the stream.
         temp_stream.seek(0)
