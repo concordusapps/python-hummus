@@ -105,7 +105,7 @@ cdef class PageInput:
                 return False
 
         # Check for the Tj operator.
-        return re.search('TJ', data.decode('utf8'), re.IGNORECASE) is not None
+        return re.search(b'TJ', data, re.IGNORECASE) is not None
 
     def embed_to(self, Context ctx):
         cdef PDFPageRange page_range
