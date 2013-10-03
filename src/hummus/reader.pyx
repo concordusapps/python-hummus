@@ -191,3 +191,8 @@ cdef class Reader:
     def __iter__(self):
         for index in range(len(self)):
             yield self[index]
+
+    property encrypted:
+
+        def __get__(self):
+            return self._handle.IsEncrypted()

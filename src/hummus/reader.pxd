@@ -54,6 +54,8 @@ cdef extern from "PDFParser.h":
         int StartPDFParsing(PythonByteReaderWithPosition* source)
         int GetPagesCount()
 
+        bool IsEncrypted()
+
         PDFDictionary* ParsePage(int index)
 
         PDFObject* QueryDictionaryObject(PDFDictionary*,const string& name)
