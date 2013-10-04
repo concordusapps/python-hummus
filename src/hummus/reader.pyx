@@ -9,6 +9,7 @@ from hummus.rectangle cimport Rectangle, PDFRectangle
 from hummus.page cimport *
 from hummus.interface cimport *
 from hummus.context cimport *
+import contextlib
 
 
 cdef class PageInput:
@@ -52,60 +53,128 @@ cdef class PageInput:
         if self._handle == NULL:
             _obj = self._parent._handle.ParsePage(self._index)
             self._handle = new PDFPageInput(
-                &self._parent._handle, <PDFObject*>_obj)
+                self._parent._handle, <PDFObject*>_obj)
+
+    cdef bint _ref_has_text(self, PDFObject* ref):
+        cdef PDFStreamInput* stream
+        cdef PDFDictionary* info
+        cdef PDFObject* info_length = NULL
+        cdef PDFArray* contents_array
+        cdef bint compressed = False
+        cdef int length = 0
+        cdef int offset = 0
+
+        if ref.GetType() == ePDFObjectStream:
+
+            # Handle the a bit more common case of /Contents being
+            # a PDF stream.
+
+            try:
+                stream = <PDFStreamInput*>ref
+
+                info = stream.QueryStreamDictionary()
+
+                if not info.Exists('Length'):
+                    return False
+
+                offset = stream.GetStreamContentStart()
+
+                compressed = info.Exists('Filter')
+
+                handle = self._parent._handle
+                info_length = handle.QueryDictionaryObject(info, 'Length')
+                length = (<PDFInteger*>info_length).GetValue()
+
+            except:
+                return False
+
+            finally:
+                if info:
+                    info.Release()
+
+                if info_length:
+                    info_length.Release()
+
+            # Read in data.
+            current = self._parent._stream.tell()
+            self._parent._stream.seek(offset)
+            data = self._parent._stream.read(length)
+            self._parent._stream.seek(current)
+
+            # Decompress data if needed.
+            if compressed:
+                try:
+                    data = zlib.decompress(data)
+
+                except:
+                    # Something went wrong here.
+                    return False
+
+            # Check for the Tj operator.
+            return re.search(b'TJ', data, re.IGNORECASE) is not None
+
+        elif ref.GetType() == ePDFObjectArray:
+
+            # Handle the case where /Contents is an Array of contents.
+
+            contents_array = <PDFArray*>(ref)
+
+            # Iterate through the items; auto-resolving and hoping to
+            # get streams.
+
+            for index in range(contents_array.GetLength()):
+
+                try:
+                    contents_item = self._parent._handle.QueryArrayObject(
+                        contents_array, index)
+
+                    if self._ref_has_text(contents_item):
+                        return True
+
+                except:
+                    continue
+
+                finally:
+                    if contents_item:
+                        contents_item.Release()
+
+            # Nothing in the array "actually" had text.
+
+            return False
 
     def has_text(self):
         """Figure out if there is text in this page.
         """
 
-        cdef PDFDictionary* obj
-        cdef PDFStreamInput* contents
-        cdef PDFDictionary* info
-        cdef PDFObject* info_filter
+        # PDFs can contain text through various methods:
+        #   - One or more ProcSet items in the resource dictionary could
+        #     have a sub-type of /Text
+        #   - One or more /Content blocks could contain Tj, TJ, tJ, or tj
+        #     operators which define text and these could be compressed,
+        #     encrypted, both, or banana.
+        #   - One or more XObjects in the resource dictionary could also
+        #     contain Tj operators (of various captialization).
+        #   - Possibly 1 or a dozen more ways not mentioned
+        #
+        # This procedure currently only handles #2 (the common case... at
+        # least for what its being used for at the moment).
+        #
+        # Crikey.
+
+        cdef PDFDictionary* page
+        cdef PDFObject* ref
 
         # Discover our contents.
-        obj = self._parent._handle.ParsePage(self._index)
-        contents = <PDFStreamInput*>self._parent._handle.QueryDictionaryObject(
-            obj, 'Contents')
-
-        if not contents:
+        page = self._parent._handle.ParsePage(self._index)
+        ref = self._parent._handle.QueryDictionaryObject(page, 'Contents')
+        if not ref:
             return False
 
-        offset = contents.GetStreamContentStart()
-        info = contents.QueryStreamDictionary()
-        if not info.Exists('Length'):
-            return False
+        try:
+            return self._ref_has_text(ref)
 
-        compressed = info.Exists('Filter')
-
-        info_length = self._parent._handle.QueryDictionaryObject(
-            info, 'Length')
-
-        length = (<PDFInteger*>info_length).GetValue()
-
-        # Release low-level data structures.
-        info_length.Release()
-        info.Release()
-        obj.Release()
-        contents.Release()
-
-        # Read in data.
-        current = self._parent._stream.tell()
-        self._parent._stream.seek(offset)
-        data = self._parent._stream.read(length)
-        self._parent._stream.seek(current)
-
-        # Decompress data if needed.
-        if compressed:
-            try:
-                data = zlib.decompress(data)
-
-            except:
-                # Something went wrong here.
-                return False
-
-        # Check for the Tj operator.
-        return re.search(b'TJ', data, re.IGNORECASE) is not None
+        finally:
+            ref.Release()
 
     def embed_to(self, Context ctx):
         cdef PDFPageRange page_range
@@ -156,6 +225,8 @@ cdef class Reader:
         cdef ByteReaderWithPosition base_reader
         cdef int status
 
+        self._handle = new PDFParser()
+
         if hasattr(source, 'read'):
             # Construct a streaming reader from the stream.
             self._stream = StreamByteReaderWithPosition(source)
@@ -173,6 +244,10 @@ cdef class Reader:
         status = self._handle.StartPDFParsing(stream_handle)
         if status < 0:
             raise ValueError('Not a valid PDF document', source)
+
+    def __dealloc__(self):
+        if self._handle:
+            del self._handle
 
     def __enter__(self):
         return self
