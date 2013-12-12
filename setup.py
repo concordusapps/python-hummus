@@ -4,6 +4,8 @@ from setuptools import setup, find_packages, Extension
 from pkgutil import get_importer
 from collections import defaultdict
 from functools import wraps
+from distutils import sysconfig
+import re
 from fnmatch import fnmatch
 from os.path import join
 import os
@@ -100,6 +102,12 @@ def make_extension(name, sources=None, cython=True):
     # Resolve extension location from name.
     location = join('src', *name.split('.'))
     location += '.pyx' if cython else '.cpp'
+
+    # NOTE: Performing black magic hacks to remove --as-needed from the linker
+    #   flags if present.
+    sysconfig.get_config_vars()
+    lds = sysconfig._config_vars['LDSHARED']
+    sysconfig._config_vars['LDSHARED'] = re.sub(r',?--as-needed,??', '', lds)
 
     # Create and return the extension.
     return Extension(
