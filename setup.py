@@ -108,13 +108,15 @@ def make_extension(name, sources=None, cython=True):
     sysconfig.get_config_vars()
     lds = sysconfig._config_vars['LDSHARED']
     sysconfig._config_vars['LDSHARED'] = re.sub(r',?--as-needed,??', '', lds)
+    config = make_config()
+    config['libraries'].insert(0, 'hummus')
 
     # Create and return the extension.
     return Extension(
         name=name,
         sources=sources + [location] if sources else [location],
         language='c++',
-        **make_config())
+        **config)
 
 
 @lazy
